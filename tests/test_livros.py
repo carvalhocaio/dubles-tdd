@@ -108,8 +108,20 @@ def duble_de_url_open_que_levanta_excessao_http_error(urlopen, timeout):
     raise HTTPError(Dummy(), Dummy(), "mensagem de erro", Dummy(), fp)
 
 
+"""
 def executar_requisicao_levanta_excecao_do_tipo_http_error():
     with patch("colecao.livro.urlopen", duble_de_url_open_que_levanta_excessao_http_error):
         with pytest.raises(HTTPError) as excecao:
             executar_requisicao("http://")
         assert "mensagem de erro" in str(excecao.value)
+"""
+
+
+@patch("colecao.livros.urlopen")
+def test_executar_requisicao_levanta_excecao_do_tipo_http_error(duble_de_urlopen):
+    fp = mock_open
+    fp.close = Dummy
+    duble_de_urlopen.side_effect = HTTPError(Mock(), Mock(), "mensagem de erro", Mock(), fp)
+    with pytest.raises(HTTPError) as excecao:
+        executar_requisicao("http://")
+        assert "messagem de erro" in str(excecao.value)
