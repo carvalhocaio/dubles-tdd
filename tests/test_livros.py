@@ -13,39 +13,6 @@ from colecao.livros import (
 from urllib.error import HTTPError
 
 
-@skip("Vale quando consultar livros estiver completo")
-def test_consultar_livros_retorna_resultado_formato_string():
-    resultado = consultar_livros("Agatha Christie")
-    assert type(resultado) == str
-
-
-@skip
-def test_consultar_livros_chama_preparar_dados_para_requisicao_uma_vez_e_com_os_mesmos_parametros_de_consultar_livros():
-    with patch("colecao.livros.preparar_dados_para_requisicao") as duble:
-        consultar_livros("Agatha Christie")
-        duble.assert_called_once_with("Agatha Christie")
-
-
-@skip
-def test_consultar_livros_chama_obter_url_usando_como_parametro_o_retorno_de_preparar_dados_para_requisicao():
-    with patch("colecao.livros.preparar_dados_para_requisicao") as duble_preparar:
-        dados = {"author": "Agatha Christie"}
-        duble_preparar.return_value = dados
-        with patch("colecao.livros.obter_url") as duble_obter_url:
-            consultar_livros("Agatha Christie")
-            duble_obter_url.assert_called_once_with("https://buscador", dados)
-
-
-@skip
-def test_consultar_livros_chama_executar_requisicao_usando_retorno_de_obter_url():
-    with patch("colecao.livros.obter_url") as duble_obter_url:
-        duble_obter_url.return_value = "https://buscador"
-        with patch("colecao.livros.executar_requisicao") as duble_executar_requisicao:
-            consultar_livros("Agatha Christie")
-            duble_executar_requisicao.assert_called_once_with(
-                "https://buscador")
-
-
 class StubHTTPResponse:
     def read(self):
         return b""
@@ -57,6 +24,38 @@ class StubHTTPResponse:
         pass
 
 
+@patch("colecao.livros.urlopen", return_value=StubHTTPResponse())
+def test_consultar_livros_retorna_resultado_formato_string(stub_urlopen):
+    resultado = consultar_livros("Agatha Christie")
+    assert type(resultado) == str
+
+
+@patch("colecao.livros.urlopen", return_value=StubHTTPResponse())
+def test_consultar_livros_chama_preparar_dados_para_requisicao_uma_vez_e_com_os_mesmos_parametros_de_consultar_livros(stub_urlopen):
+    with patch("colecao.livros.preparar_dados_para_requisicao") as spy_preparar_dados:
+        consultar_livros("Agatha Christie")
+        spy_preparar_dados.assert_called_once_with("Agatha Christie")
+
+
+@patch("colecao.livros.urlopen", return_value=StubHTTPResponse())
+def test_consultar_livros_chama_obter_url_usando_como_parametro_o_retorno_de_preparar_dados_para_requisicao(stub_urlopen):
+    with patch("colecao.livros.preparar_dados_para_requisicao") as stub_preparar:
+        dados = {"author": "Agatha Christie"}
+        stub_preparar.return_value = dados
+        with patch("colecao.livros.obter_url") as spy_obter_url:
+            consultar_livros("Agatha Christie")
+            spy_obter_url.assert_called_once_with("https://buscador", dados)
+
+
+@patch("colecao.livros.urlopen", return_value=StubHTTPResponse())
+def test_consultar_livros_chama_executar_requisicao_usando_retorno_de_obter_url(stub_urlopen):
+    with patch("colecao.livros.obter_url") as stub_obter_url:
+        stub_obter_url.return_value = "https://buscador"
+        with patch("colecao.livros.executar_requisicao") as spy_executar_requisicao:
+            consultar_livros("Agatha Christie")
+            spy_executar_requisicao.assert_called_once_with("https://buscador")
+
+
 def stub_de_urlopen(url, timeout):
     return StubHTTPResponse()
 
@@ -64,8 +63,7 @@ def stub_de_urlopen(url, timeout):
 def test_executar_requisicao_retorna_tipo_string():
     with patch("colecao.livros.urlopen", stub_de_urlopen):
         print(stub_de_urlopen)
-        resultado = executar_requisicao(
-            "https://buscarlivros?author=Jk+Rowlings")
+        resultado = executar_requisicao("https://buscarlivros?author=Jk+Rowlings")
         assert type(resultado) == str
 
 
@@ -139,8 +137,9 @@ def test_executar_requisicao_levanta_excecao_do_tipo_http_error(duble_de_urlopen
 def test_executar_requisicao_loga_mensagem_de_erro_de_http_error(stub_de_urlopen, caplog):
     fp = mock_open
     fp.close = Dummy
-    stub_de_urlopen.side_effect = HTTPError(Mock(), Mock(), "mensagem de erro", Mock(), fp)
-    
+    stub_de_urlopen.side_effect = HTTPError(
+        Mock(), Mock(), "mensagem de erro", Mock(), fp)
+
     executar_requisicao("http://")
     assert len(caplog.records) == 1
     for registro in caplog.records:
