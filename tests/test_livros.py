@@ -42,8 +42,8 @@ def test_consultar_livros_chama_executar_requisicao_usando_retorno_de_obter_url(
         duble_obter_url.return_value = "https://buscador"
         with patch("colecao.livros.executar_requisicao") as duble_executar_requisicao:
             consultar_livros("Agatha Christie")
-            duble_executar_requisicao.assert_called_once_with("https://buscador")
-
+            duble_executar_requisicao.assert_called_once_with(
+                "https://buscador")
 
 
 class StubHTTPResponse:
@@ -52,7 +52,6 @@ class StubHTTPResponse:
 
     def __enter__(self):
         return self
-
 
     def __exit__(self, param1, param2, param3):
         pass
@@ -65,9 +64,9 @@ def stub_de_urlopen(url, timeout):
 def test_executar_requisicao_retorna_tipo_string():
     with patch("colecao.livros.urlopen", stub_de_urlopen):
         print(stub_de_urlopen)
-        resultado = executar_requisicao("https://buscarlivros?author=Jk+Rowlings")
+        resultado = executar_requisicao(
+            "https://buscarlivros?author=Jk+Rowlings")
         assert type(resultado) == str
-
 
 
 """
@@ -108,6 +107,7 @@ def stub_de_url_open_que_levanta_excessao_http_error(urlopen, timeout):
     raise HTTPError(Dummy(), Dummy(), "mensagem de erro", Dummy(), fp)
 
 
+"""
 def test_executar_requisicao_loga_mensagem_de_erro_de_http_error(caplog):
     with patch("colecao.livros.urlopen", stub_de_url_open_que_levanta_excessao_http_error):
         resultado = executar_requisicao("http://")
@@ -115,8 +115,8 @@ def test_executar_requisicao_loga_mensagem_de_erro_de_http_error(caplog):
         assert len(caplog.records) == 1
         for registro in caplog.records:
             assert mensagem_de_erro in registro.message
-    
-"""
+
+   
 def executar_requisicao_levanta_excecao_do_tipo_http_error():
     with patch("colecao.livro.urlopen", duble_de_url_open_que_levanta_excessao_http_error):
         with pytest.raises(HTTPError) as excecao:
@@ -133,3 +133,15 @@ def test_executar_requisicao_levanta_excecao_do_tipo_http_error(duble_de_urlopen
         executar_requisicao("http://")
         assert "messagem de erro" in str(excecao.value)
 """
+
+
+@patch("colecao.livros.urlopen")
+def test_executar_requisicao_loga_mensagem_de_erro_de_http_error(stub_de_urlopen, caplog):
+    fp = mock_open
+    fp.close = Dummy
+    stub_de_urlopen.side_effect = HTTPError(Mock(), Mock(), "mensagem de erro", Mock(), fp)
+    
+    executar_requisicao("http://")
+    assert len(caplog.records) == 1
+    for registro in caplog.records:
+        assert "mensagem de erro" in registro.message
