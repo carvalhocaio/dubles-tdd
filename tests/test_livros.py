@@ -102,19 +102,26 @@ class Dummy():
     pass
 
 
-def duble_de_url_open_que_levanta_excessao_http_error(urlopen, timeout):
+def stub_de_url_open_que_levanta_excessao_http_error(urlopen, timeout):
     fp = mock_open()
     fp.close = Dummy
     raise HTTPError(Dummy(), Dummy(), "mensagem de erro", Dummy(), fp)
 
 
+def test_executar_requisicao_loga_mensagem_de_erro_de_http_error(caplog):
+    with patch("colecao.livros.urlopen", stub_de_url_open_que_levanta_excessao_http_error):
+        resultado = executar_requisicao("http://")
+        mensagem_de_erro = "mensagem de erro"
+        assert len(caplog.records) == 1
+        for registro in caplog.records:
+            assert mensagem_de_erro in registro.message
+    
 """
 def executar_requisicao_levanta_excecao_do_tipo_http_error():
     with patch("colecao.livro.urlopen", duble_de_url_open_que_levanta_excessao_http_error):
         with pytest.raises(HTTPError) as excecao:
             executar_requisicao("http://")
         assert "mensagem de erro" in str(excecao.value)
-"""
 
 
 @patch("colecao.livros.urlopen")
@@ -125,3 +132,4 @@ def test_executar_requisicao_levanta_excecao_do_tipo_http_error(duble_de_urlopen
     with pytest.raises(HTTPError) as excecao:
         executar_requisicao("http://")
         assert "messagem de erro" in str(excecao.value)
+"""
