@@ -8,7 +8,8 @@ from unittest.mock import (
 from unittest import skip
 from colecao.livros import (
     consultar_livros,
-    executar_requisicao
+    executar_requisicao,
+    escrever_em_arquivo,
 )
 from urllib.error import HTTPError
 
@@ -63,7 +64,8 @@ def stub_de_urlopen(url, timeout):
 def test_executar_requisicao_retorna_tipo_string():
     with patch("colecao.livros.urlopen", stub_de_urlopen):
         print(stub_de_urlopen)
-        resultado = executar_requisicao("https://buscarlivros?author=Jk+Rowlings")
+        resultado = executar_requisicao(
+            "https://buscarlivros?author=Jk+Rowlings")
         assert type(resultado) == str
 
 
@@ -144,3 +146,29 @@ def test_executar_requisicao_loga_mensagem_de_erro_de_http_error(stub_de_urlopen
     assert len(caplog.records) == 1
     for registro in caplog.records:
         assert "mensagem de erro" in registro.message
+
+
+class DubleLogging:
+    def __init__(self):
+        self._mensagens = []
+
+    def exception(self, mensagem):
+        self._mensagens.append(mensagem)
+    
+    @property
+    def mensagens(self):
+        return self._mensagens
+
+
+def duble_makedirs(diretorio):
+    raise OSError(f"Não foi possível criar diretório {diretorio}")
+
+
+def test_escrever_em_arquivo_registra_excecao_que_nao_foi_possivel_criar_diretorio():
+    arquivo = "/tmp/arquivo"
+    conteudo = "dados de livros"
+    duble_logging = DubleLogging()
+    with patch("colecao.livros.os.makedirs", duble_makedirs):
+        with patch("colecao.livros.logging", duble_logging):
+            escrever_em_arquivo(arquivo, conteudo)
+            assert "Não foi possível criar diretório /tmp" in duble_logging.mensagens
