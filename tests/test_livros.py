@@ -154,7 +154,7 @@ class DubleLogging:
 
     def exception(self, mensagem):
         self._mensagens.append(mensagem)
-    
+
     @property
     def mensagens(self):
         return self._mensagens
@@ -180,4 +180,44 @@ def test_escrever_em_arquivo_registra_excecao_que_nao_foi_possivel_criar_diretor
 def test_escrever_em_arquivo_registra_erro_ao_criar_o_arquivo(stub_open, spy_exception, stub_makedirs):
     arq = "/bla/arquivo.json"
     escrever_em_arquivo(arq, "dados de livros")
-    spy_exception.assert_called_once_with(f"Não foi possível criar arquivo {arq}")
+    spy_exception.assert_called_once_with(
+        f"Não foi possível criar arquivo {arq}")
+
+
+class SpyFp:
+    def __init__(self):
+        self._conteudo = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, param1, param2, param3):
+        pass
+
+    def write(self, conteudo):
+        self._conteudo = conteudo
+
+
+@skip
+@patch("colecao.livros.open")
+def test_escrever_em_arquivo_chama_write(stub_de_open):
+    arq = "tmp/arquivo"
+    conteudo = "conteudo do arquivo"
+    spy_de_fp = SpyFp()
+    stub_de_open.return_value = spy_de_fp
+
+    escrever_em_arquivo(arq, conteudo)
+    assert spy_de_fp._conteudo == conteudo
+
+
+@patch("colecao.livros.open")
+def test_escrever_em_arquivo_chama_write(stub_de_open):
+    arq = "tmp/arquivo"
+    conteudo = "conteudo do arquivo"
+    spy_de_fp = MagicMock()
+    spy_de_fp.__enter__.return_value = spy_de_fp
+    spy_de_fp.__exit__.return_value = None
+    stub_de_open.return_value = spy_de_fp
+
+    escrever_em_arquivo(arq, conteudo)
+    spy_de_fp.write.assert_called_once_with(conteudo)
