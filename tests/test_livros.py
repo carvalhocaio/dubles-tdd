@@ -32,14 +32,16 @@ def test_consultar_livros_retorna_resultado_formato_string(stub_urlopen):
 
 
 @patch("colecao.livros.urlopen", return_value=StubHTTPResponse())
-def test_consultar_livros_chama_preparar_dados_para_requisicao_uma_vez_e_com_os_mesmos_parametros_de_consultar_livros(stub_urlopen):
+def test_consultar_livros_chama_preparar_dados_para_requisicao_uma_vez_e_com_os_mesmos_parametros_de_consultar_livros(
+        stub_urlopen):
     with patch("colecao.livros.preparar_dados_para_requisicao") as spy_preparar_dados:
         consultar_livros("Agatha Christie")
         spy_preparar_dados.assert_called_once_with("Agatha Christie")
 
 
 @patch("colecao.livros.urlopen", return_value=StubHTTPResponse())
-def test_consultar_livros_chama_obter_url_usando_como_parametro_o_retorno_de_preparar_dados_para_requisicao(stub_urlopen):
+def test_consultar_livros_chama_obter_url_usando_como_parametro_o_retorno_de_preparar_dados_para_requisicao(
+        stub_urlopen):
     with patch("colecao.livros.preparar_dados_para_requisicao") as stub_preparar:
         dados = {"author": "Agatha Christie"}
         stub_preparar.return_value = dados
