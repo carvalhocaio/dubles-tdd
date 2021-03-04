@@ -10,6 +10,8 @@ from colecao.livros import (
     consultar_livros,
     executar_requisicao,
     escrever_em_arquivo,
+    Consulta,
+    baixar_livros,
 )
 from urllib.error import HTTPError
 
@@ -223,3 +225,63 @@ def test_escrever_em_arquivo_chama_write(stub_de_open):
 
     escrever_em_arquivo(arq, conteudo)
     spy_de_fp.write.assert_called_once_with(conteudo)
+
+
+@pytest.fixture
+def resultado_em_duas_paginas():
+    return [
+        """
+        {
+            "num_docs": 5,
+            "docs": [
+                {"author": "Luciano Ramalho",
+                 "title": "Python Fluente",
+                },
+                {"author": "Nilo Rey",
+                 "title": "Introdução a Programação com Python"
+                },
+                {"author": "Allen B. Downey",
+                 "title": "Pense em Python"
+                }
+            ]
+        }
+        """,
+        """
+        {
+            "num_docs": 5,
+            "docs": [
+                {"author": "Kenneth Reitz",
+                 "title": "O Guia do Mochileiro Python"
+                },
+                {"author": "Wes McKinney",
+                 "title": "Python Para Análise de Dados"
+                }
+            ]
+        }
+        """
+    ]
+
+
+class DubleConsulta:
+    def __init__(self):
+        self.chamadas = []
+        self.consultas = []
+
+    def Consulta(self, autor=None, titulo=None, livre=None):
+        consulta = Consulta(autor, titulo, livre)
+        self.chamadas.append((autor, titulo, livre))
+        self.consultas.append(consulta)
+        return consulta
+
+    def verificar(self):
+        assert len(self.consultas) == 1
+        assert self.chamadas == [
+            (None, None, "Python")
+        ]
+
+
+def test_baixar_livros_instancia_Consulta_uma_vez():
+    duble = DubleConsulta()
+    with patch("colecao.livros.Consulta", duble.Consulta):
+        baixar_livros(None, None, "Python")
+        duble.verificar()

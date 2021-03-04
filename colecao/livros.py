@@ -139,3 +139,7 @@ class Resposta:
                 self.dados.get("num_docs", 0) / self.qtd_docs_por_pagina
             )
         return 0
+
+
+def baixar_livros(autor=None, titulo=None, livre=None):
+    consulta = Consulta(autor, titulo, livre)
