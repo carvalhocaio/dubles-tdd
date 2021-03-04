@@ -4,7 +4,9 @@ from unittest.mock import (
     mock_open,
     Mock,
     MagicMock,
+    call,
 )
+
 from unittest import skip
 from colecao.livros import (
     consultar_livros,
@@ -12,6 +14,7 @@ from colecao.livros import (
     escrever_em_arquivo,
     Consulta,
     baixar_livros,
+    Resposta,
 )
 from urllib.error import HTTPError
 
@@ -35,7 +38,8 @@ def test_consultar_livros_retorna_resultado_formato_string(stub_urlopen):
 
 @patch("colecao.livros.urlopen", return_value=StubHTTPResponse())
 def test_consultar_livros_chama_preparar_dados_para_requisicao_uma_vez_e_com_os_mesmos_parametros_de_consultar_livros(
-        stub_urlopen):
+    stub_urlopen,
+):
     with patch("colecao.livros.preparar_dados_para_requisicao") as spy_preparar_dados:
         consultar_livros("Agatha Christie")
         spy_preparar_dados.assert_called_once_with("Agatha Christie")
@@ -43,7 +47,8 @@ def test_consultar_livros_chama_preparar_dados_para_requisicao_uma_vez_e_com_os_
 
 @patch("colecao.livros.urlopen", return_value=StubHTTPResponse())
 def test_consultar_livros_chama_obter_url_usando_como_parametro_o_retorno_de_preparar_dados_para_requisicao(
-        stub_urlopen):
+    stub_urlopen,
+):
     with patch("colecao.livros.preparar_dados_para_requisicao") as stub_preparar:
         dados = {"author": "Agatha Christie"}
         stub_preparar.return_value = dados
@@ -53,7 +58,9 @@ def test_consultar_livros_chama_obter_url_usando_como_parametro_o_retorno_de_pre
 
 
 @patch("colecao.livros.urlopen", return_value=StubHTTPResponse())
-def test_consultar_livros_chama_executar_requisicao_usando_retorno_de_obter_url(stub_urlopen):
+def test_consultar_livros_chama_executar_requisicao_usando_retorno_obter_url(
+    stub_urlopen,
+):
     with patch("colecao.livros.obter_url") as stub_obter_url:
         stub_obter_url.return_value = "https://buscador"
         with patch("colecao.livros.executar_requisicao") as spy_executar_requisicao:
@@ -68,29 +75,31 @@ def stub_de_urlopen(url, timeout):
 def test_executar_requisicao_retorna_tipo_string():
     with patch("colecao.livros.urlopen", stub_de_urlopen):
         print(stub_de_urlopen)
-        resultado = executar_requisicao(
-            "https://buscarlivros?author=Jk+Rowlings")
+        resultado = executar_requisicao("https://buscarlivros?author=Jk+Rowlings")
         assert type(resultado) == str
 
 
 """
-def test_executar_requisicao_retorna_resultado_tipo_string_str():
+def test_executar_requisicao_retorna_resultado_tipo_str():
     with patch("colecao.livros.urlopen") as duble_de_urlopen:
         print(duble_de_urlopen)
         duble_de_urlopen.return_value = StubHTTPResponse()
-        resultado = executar_requisicao("https://buscarlivros?autor=Jk+Rowlings")
+        resultado = executar_requisicao("https://buscarlivros?author=Jk+Rowlings")
         assert type(resultado) == str
 
+
+            
 def test_executar_requisicao_retorna_resultado_tipo_str():
     with patch("colecao.livros.urlopen", return_value=StubHTTPResponse()):
         resultado = executar_requisicao("https://buscarlivros?author=Jk+Rowlings")
         assert type(resultado) == str
-
+    
 
 @patch("colecao.livros.urlopen", return_value=StubHTTPResponse())
 def test_executar_requisicao_retorna_resultado_tipo_str(duble_de_urlopen):
     resultado = executar_requisicao("https://buscarlivros?author=Jk+Rowlings")
     assert type(resultado) == str
+
 """
 
 
@@ -101,51 +110,50 @@ def test_executar_requisicao_retorna_resultado_tipo_str(duble_de_urlopen):
     assert type(resultado) == str
 
 
-class Dummy():
+class Dummy:
     pass
 
 
-def stub_de_url_open_que_levanta_excessao_http_error(urlopen, timeout):
-    fp = mock_open()
+def stub_de_urlopen_que_levanta_excecao_http_error(url, timeout):
+    fp = mock_open
     fp.close = Dummy
     raise HTTPError(Dummy(), Dummy(), "mensagem de erro", Dummy(), fp)
 
 
 """
 def test_executar_requisicao_loga_mensagem_de_erro_de_http_error(caplog):
-    with patch("colecao.livros.urlopen", stub_de_url_open_que_levanta_excessao_http_error):
+    with patch("colecao.livros.urlopen", stub_de_urlopen_que_levanta_excecao_http_error):
         resultado = executar_requisicao("http://")
         mensagem_de_erro = "mensagem de erro"
         assert len(caplog.records) == 1
         for registro in caplog.records:
             assert mensagem_de_erro in registro.message
+        
 
-   
-def executar_requisicao_levanta_excecao_do_tipo_http_error():
-    with patch("colecao.livro.urlopen", duble_de_url_open_que_levanta_excessao_http_error):
+def test_executar_requisicao_levanta_excecao_do_tipo_http_error():
+    with patch("colecao.livros.urlopen", duble_de_urlopen_que_levanta_excecao_http_error):
         with pytest.raises(HTTPError) as excecao:
             executar_requisicao("http://")
         assert "mensagem de erro" in str(excecao.value)
-
+            
+        
 
 @patch("colecao.livros.urlopen")
 def test_executar_requisicao_levanta_excecao_do_tipo_http_error(duble_de_urlopen):
     fp = mock_open
-    fp.close = Dummy
+    fp.close = Mock()
     duble_de_urlopen.side_effect = HTTPError(Mock(), Mock(), "mensagem de erro", Mock(), fp)
     with pytest.raises(HTTPError) as excecao:
         executar_requisicao("http://")
-        assert "messagem de erro" in str(excecao.value)
+        assert "mensagem de erro" in str(excecao.value)
 """
 
 
 @patch("colecao.livros.urlopen")
-def test_executar_requisicao_loga_mensagem_de_erro_de_http_error(stub_de_urlopen, caplog):
+def test_executar_requisicao_loga_mensagem_de_erro_de_http_error(stub_urlopen, caplog):
     fp = mock_open
-    fp.close = Dummy
-    stub_de_urlopen.side_effect = HTTPError(
-        Mock(), Mock(), "mensagem de erro", Mock(), fp)
-
+    fp.close = Mock()
+    stub_urlopen.side_effect = HTTPError(Mock(), Mock(), "mensagem de erro", Mock(), fp)
     executar_requisicao("http://")
     assert len(caplog.records) == 1
     for registro in caplog.records:
@@ -156,20 +164,20 @@ class DubleLogging:
     def __init__(self):
         self._mensagens = []
 
-    def exception(self, mensagem):
-        self._mensagens.append(mensagem)
-
     @property
     def mensagens(self):
         return self._mensagens
 
+    def exception(self, mensagem):
+        self._mensagens.append(mensagem)
+
 
 def duble_makedirs(diretorio):
-    raise OSError(f"Não foi possível criar diretório {diretorio}")
+    raise OSError("Não foi possível criar diretório %s" % diretorio)
 
 
 def test_escrever_em_arquivo_registra_excecao_que_nao_foi_possivel_criar_diretorio():
-    arquivo = "/tmp/arquivo"
+    arquivo = "/tmp/arquivo.json"
     conteudo = "dados de livros"
     duble_logging = DubleLogging()
     with patch("colecao.livros.os.makedirs", duble_makedirs):
@@ -181,11 +189,12 @@ def test_escrever_em_arquivo_registra_excecao_que_nao_foi_possivel_criar_diretor
 @patch("colecao.livros.os.makedirs")
 @patch("colecao.livros.logging.exception")
 @patch("colecao.livros.open", side_effect=OSError())
-def test_escrever_em_arquivo_registra_erro_ao_criar_o_arquivo(stub_open, spy_exception, stub_makedirs):
+def test_escrever_em_arquivo_registra_erro_ao_criar_o_arquivo(
+    stub_open, spy_exception, stub_makedirs
+):
     arq = "/bla/arquivo.json"
     escrever_em_arquivo(arq, "dados de livros")
-    spy_exception.assert_called_once_with(
-        f"Não foi possível criar arquivo {arq}")
+    spy_exception.assert_called_once_with("Não foi possível criar arquivo %s" % arq)
 
 
 class SpyFp:
@@ -205,7 +214,7 @@ class SpyFp:
 @skip
 @patch("colecao.livros.open")
 def test_escrever_em_arquivo_chama_write(stub_de_open):
-    arq = "tmp/arquivo"
+    arq = "/tmp/arquivo"
     conteudo = "conteudo do arquivo"
     spy_de_fp = SpyFp()
     stub_de_open.return_value = spy_de_fp
@@ -216,7 +225,7 @@ def test_escrever_em_arquivo_chama_write(stub_de_open):
 
 @patch("colecao.livros.open")
 def test_escrever_em_arquivo_chama_write(stub_de_open):
-    arq = "tmp/arquivo"
+    arq = "/tmp/arquivo"
     conteudo = "conteudo do arquivo"
     spy_de_fp = MagicMock()
     spy_de_fp.__enter__.return_value = spy_de_fp
@@ -235,12 +244,12 @@ def resultado_em_duas_paginas():
             "num_docs": 5,
             "docs": [
                 {"author": "Luciano Ramalho",
-                 "title": "Python Fluente",
+                 "title": "Python Fluente"
                 },
-                {"author": "Nilo Rey",
+                {"author": "Nilo Ney",
                  "title": "Introdução a Programação com Python"
                 },
-                {"author": "Allen B. Downey",
+                 {"author": "Allen B. Downey",
                  "title": "Pense em Python"
                 }
             ]
@@ -253,16 +262,225 @@ def resultado_em_duas_paginas():
                 {"author": "Kenneth Reitz",
                  "title": "O Guia do Mochileiro Python"
                 },
-                {"author": "Wes McKinney",
+                 {"author": "Wes McKinney",
                  "title": "Python Para Análise de Dados"
                 }
             ]
         }
-        """
+        """,
     ]
 
 
-class DubleConsulta:
+@pytest.fixture
+def resultado_em_tres_paginas():
+    return [
+        """
+        {
+            "num_docs": 8,
+            "docs": [
+                {"author": "Luciano Ramalho",
+                 "title": "Python Fluente"
+                },
+                {"author": "Nilo Ney",
+                 "title": "Introdução a Programação com Python"
+                },
+                 {"author": "Allen B. Downey",
+                 "title": "Pense em Python"
+                }
+            ]
+        }
+        """,
+        """
+        {
+            "num_docs": 8,
+            "docs": [
+                {"author": "Luciano Ramalho",
+                 "title": "Python Fluente"
+                },
+                {"author": "Nilo Ney",
+                 "title": "Introdução a Programação com Python"
+                },
+                 {"author": "Allen B. Downey",
+                 "title": "Pense em Python"
+                }
+            ]
+        }
+        """,
+        """
+        {
+            "num_docs": 8,
+            "docs": [
+                {"author": "Kenneth Reitz",
+                 "title": "O Guia do Mochileiro Python"
+                },
+                 {"author": "Wes McKinney",
+                 "title": "Python Para Análise de Dados"
+                }
+            ]
+        }
+        """,
+    ]
+
+
+@pytest.fixture
+def conteudo_de_4_arquivos():
+    return [
+        """
+        {
+            "num_docs": 17,
+            "docs": [
+                {"author": "Luciano Ramalho",
+                 "title": "Python Fluente"
+                },
+                {"author": "Nilo Ney",
+                 "title": "Introdução a Programação com Python"
+                },
+                 {"author": "Luciano Ramalho",
+                 "title": "Python Fluente"
+                },
+                {"author": "Nilo Ney",
+                 "title": "Introdução a Programação com Python"
+                },
+                 {"author": "Allen B. Downey",
+                 "title": "Pense em Python"
+                }
+            ]
+        }
+        """,
+        """
+        {
+            "num_docs": 17,
+            "docs": [
+                {"author": "Luciano Ramalho",
+                 "title": "Python Fluente"
+                },
+                {"author": "Nilo Ney",
+                 "title": "Introdução a Programação com Python"
+                },
+                 {"author": "Luciano Ramalho",
+                 "title": "Python Fluente"
+                },
+                {"author": "Nilo Ney",
+                 "title": "Introdução a Programação com Python"
+                },
+                 {"author": "Allen B. Downey",
+                 "title": "Pense em Python"
+                }
+            ]
+
+        }
+        """,
+        """
+        {
+            "num_docs": 17,
+            "docs": [
+                {"author": "Luciano Ramalho",
+                 "title": "Python Fluente"
+                },
+                {"author": "Nilo Ney",
+                 "title": "Introdução a Programação com Python"
+                },
+                 {"author": "Luciano Ramalho",
+                 "title": "Python Fluente"
+                },
+                {"author": "Nilo Ney",
+                 "title": "Introdução a Programação com Python"
+                },
+                 {"author": "Allen B. Downey",
+                 "title": "Pense em Python"
+                }
+            ]
+        }
+        """,
+        """
+        {
+            "num_docs": 17,
+            "docs": [
+                {"author": "Kenneth Reitz",
+                 "title": "O Guia do Mochileiro Python"
+                },
+                 {"author": "Wes McKinney",
+                 "title": "Python Para Análise de Dados"
+                }
+            ]
+        }
+        """,
+    ]
+
+
+@pytest.fixture
+def resultado_em_tres_paginas_erro_na_pagina_2():
+    return [
+        """
+        {
+            "num_docs": 8,
+            "docs": [
+                {"author": "Luciano Ramalho",
+                 "title": "Python Fluente"
+                },
+                {"author": "Nilo Ney",
+                 "title": "Introdução a Programação com Python"
+                },
+                 {"author": "Allen B. Downey",
+                 "title": "Pense em Python"
+                }
+            ]
+        }
+        """,
+        None,
+        """
+        {
+            "num_docs": 8,
+            "docs": [
+                {"author": "Kenneth Reitz",
+                 "title": "O Guia do Mochileiro Python"
+                },
+                 {"author": "Wes McKinney",
+                 "title": "Python Para Análise de Dados"
+                }
+            ]
+        }
+        """,
+    ]
+
+
+@pytest.fixture
+def resultado_em_tres_paginas_erro_na_pagina_1():
+    return [
+        None,
+        """
+        {
+            "num_docs": 8,
+            "docs": [
+                {"author": "Luciano Ramalho",
+                 "title": "Python Fluente"
+                },
+                {"author": "Nilo Ney",
+                 "title": "Introdução a Programação com Python"
+                },
+                 {"author": "Allen B. Downey",
+                 "title": "Pense em Python"
+                }
+            ]
+        }
+        """,
+        """
+        {
+            "num_docs": 8,
+            "docs": [
+                {"author": "Kenneth Reitz",
+                 "title": "O Guia do Mochileiro Python"
+                },
+                 {"author": "Wes McKinney",
+                 "title": "Python Para Análise de Dados"
+                }
+            ]
+        }
+        """,
+    ]
+
+
+class MockConsulta:
     def __init__(self):
         self.chamadas = []
         self.consultas = []
@@ -275,13 +493,101 @@ class DubleConsulta:
 
     def verificar(self):
         assert len(self.consultas) == 1
-        assert self.chamadas == [
-            (None, None, "Python")
+        assert self.chamadas == [(None, None, "Python")]
+
+
+@patch("colecao.livros.executar_requisicao")
+def test_baixar_livros_instancia_Consulta_uma_vez(
+    stub_executar_requisicao, resultado_em_duas_paginas
+):
+    mock_consulta = MockConsulta()
+    stub_executar_requisicao.side_effect = resultado_em_duas_paginas
+    Resposta.qtd_docs_por_pagina = 3
+    arquivo = ["/tmp/arquivo1", "/tmp/arquivo2", "/tmp/arquivo3"]
+    with patch("colecao.livros.Consulta", mock_consulta.Consulta):
+        baixar_livros(arquivo, None, None, "Python")
+        mock_consulta.verificar()
+
+
+@patch("colecao.livros.executar_requisicao")
+def test_baixar_livros_chama_executar_requisicao_n_vezes(
+    mock_executar_requisicao, resultado_em_duas_paginas
+):
+    mock_executar_requisicao.side_effect = resultado_em_duas_paginas
+    Resposta.qtd_docs_por_pagina = 3
+    arquivo = ["/tmp/arquivo1", "/tmp/arquivo2", "/tmp/arquivo3"]
+    baixar_livros(arquivo, None, None, "python")
+    assert mock_executar_requisicao.call_args_list == [
+        call("https://buscarlivros?q=python&page=1"),
+        call("https://buscarlivros?q=python&page=2"),
+    ]
+
+
+@patch("colecao.livros.executar_requisicao")
+def test_baixar_livros_instancia_Resposta_tres_vezes(
+    stub_executar_requisicao, resultado_em_tres_paginas
+):
+    stub_executar_requisicao.side_effect = resultado_em_tres_paginas
+    Resposta.qtd_docs_por_pagina = 3
+    arquivo = ["/tmp/arquivo1", "/tmp/arquivo2", "/tmp/arquivo3"]
+    with patch("colecao.livros.Resposta") as MockResposta:
+        MockResposta.side_effect = [
+            Resposta(resultado_em_tres_paginas[0]),
+            Resposta(resultado_em_tres_paginas[1]),
+            Resposta(resultado_em_tres_paginas[2]),
+        ]
+        baixar_livros(arquivo, None, None, "python")
+        assert MockResposta.call_args_list == [
+            call(resultado_em_tres_paginas[0]),
+            call(resultado_em_tres_paginas[1]),
+            call(resultado_em_tres_paginas[2]),
         ]
 
 
-def test_baixar_livros_instancia_Consulta_uma_vez():
-    duble = DubleConsulta()
-    with patch("colecao.livros.Consulta", duble.Consulta):
-        baixar_livros(None, None, "Python")
-        duble.verificar()
+@patch("colecao.livros.executar_requisicao")
+def test_baixar_livros_chama_escrever_em_arquivo_tres_vezes(
+    stub_executar_requisicao, resultado_em_tres_paginas
+):
+    stub_executar_requisicao.side_effect = resultado_em_tres_paginas
+    Resposta.qtd_docs_por_pagina = 3
+    arquivo = ["/tmp/arquivo1", "/tmp/arquivo2", "/tmp/arquivo3"]
+    with patch("colecao.livros.escrever_em_arquivo") as mock_escrever:
+        mock_escrever.return_value = None
+        baixar_livros(arquivo, None, None, "python")
+        assert mock_escrever.call_args_list == [
+            call(arquivo[0], resultado_em_tres_paginas[0]),
+            call(arquivo[1], resultado_em_tres_paginas[1]),
+            call(arquivo[2], resultado_em_tres_paginas[2]),
+        ]
+
+
+@patch("colecao.livros.executar_requisicao")
+def test_baixar_livros_chama_escrever_em_arquivo_para_pagina_1_e_3(
+    stub_executar_requisicao, resultado_em_tres_paginas_erro_na_pagina_2
+):
+    stub_executar_requisicao.side_effect = resultado_em_tres_paginas_erro_na_pagina_2
+    Resposta.qtd_docs_por_pagina = 3
+    arquivo = ["/tmp/arquivo1", "/tmp/arquivo2", "/tmp/arquivo3"]
+    with patch("colecao.livros.escrever_em_arquivo") as mock_escrever:
+        mock_escrever.side_effect = [None, None]
+        baixar_livros(arquivo, None, None, "python")
+        assert mock_escrever.call_args_list == [
+            call(arquivo[0], resultado_em_tres_paginas_erro_na_pagina_2[0]),
+            call(arquivo[2], resultado_em_tres_paginas_erro_na_pagina_2[2]),
+        ]
+
+
+@patch("colecao.livros.executar_requisicao")
+def test_baixar_livros_chama_escrever_em_arquivo_para_pagina_2_e_3(
+    stub_executar_requisicao, resultado_em_tres_paginas_erro_na_pagina_1
+):
+    stub_executar_requisicao.side_effect = resultado_em_tres_paginas_erro_na_pagina_1
+    Resposta.qtd_docs_por_pagina = 3
+    arquivo = ["/tmp/arquivo1", "/tmp/arquivo2", "/tmp/arquivo3"]
+    with patch("colecao.livros.escrever_em_arquivo") as mock_escrever:
+        mock_escrever.side_effect = [None, None]
+        baixar_livros(arquivo, None, None, "python")
+        assert mock_escrever.call_args_list == [
+            call(arquivo[1], resultado_em_tres_paginas_erro_na_pagina_1[1]),
+            call(arquivo[2], resultado_em_tres_paginas_erro_na_pagina_1[2]),
+        ]

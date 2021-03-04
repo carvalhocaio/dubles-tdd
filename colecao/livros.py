@@ -56,13 +56,17 @@ class Consulta:
     - dados_para_requisicao
     """
 
-    def __init__(self, autor, titulo, livre):
+    def __init__(self, autor=None, titulo=None, livre=None):
         self._autor = autor
         self._titulo = titulo
         self._livre = livre
         self._pagina = 0
         self._dados_para_requisicao = None
         self._url = "https://buscarlivros"
+
+    @property
+    def pagina(self):
+        return self._pagina
 
     @property
     def dados_para_requisicao(self):
@@ -84,7 +88,7 @@ class Consulta:
 
     @property
     def seguinte(self):
-        dados_para_requisicao = self._dados_para_requisicao
+        dados_para_requisicao = self.dados_para_requisicao
         self._pagina += 1
         dados_para_requisicao["page"] = self._pagina
         req = Request(self._url, dados_para_requisicao)
@@ -141,5 +145,18 @@ class Resposta:
         return 0
 
 
-def baixar_livros(autor=None, titulo=None, livre=None):
+def baixar_livros(arquivo, autor=None, titulo=None, livre=None):
     consulta = Consulta(autor, titulo, livre)
+    total_de_paginas = 1
+    i = 0
+    while True:
+        resultado = executar_requisicao(consulta.seguinte)
+        if resultado:
+            resposta = Resposta(resultado)
+            total_de_paginas = resposta.total_de_paginas
+            escrever_em_arquivo(arquivo[i], resultado)
+        elif consulta.pagina == 1:
+            total_de_paginas = 2
+        if consulta.pagina == total_de_paginas:
+            break
+        i += 1
