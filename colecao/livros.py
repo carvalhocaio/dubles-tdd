@@ -1,5 +1,7 @@
 import json
 from math import ceil
+from tests.test_livros import fake_inserir_registros
+from unittest.mock import MagicMock, patch
 from urllib.parse import urlencode
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
@@ -167,7 +169,7 @@ def ler_arquivo(nome):
 
 
 def registrar_livros(arquivos, inserir_registros):
-    qtd =0
+    qtd = 0
     for arq in arquivos:
         conteudo = ler_arquivo(arq)
         resposta = Resposta(conteudo)

@@ -1,4 +1,6 @@
 import pytest
+from urllib.error import HTTPError
+from unittest import skip
 from unittest.mock import (
     patch,
     mock_open,
@@ -7,7 +9,6 @@ from unittest.mock import (
     call,
 )
 
-from unittest import skip
 from colecao.livros import (
     consultar_livros,
     executar_requisicao,
@@ -15,9 +16,8 @@ from colecao.livros import (
     Consulta,
     baixar_livros,
     Resposta,
-    registrar_livros
+    registrar_livros,
 )
-from urllib.error import HTTPError
 
 
 class StubHTTPResponse:
@@ -596,7 +596,6 @@ def test_baixar_livros_chama_escrever_em_arquivo_para_pagina_2_e_3(
         ]
 
 
-
 def fake_inserir_registros(dados):
     return len(dados)
 
@@ -654,3 +653,39 @@ def test_registrar_livros_chama_inserir_registros(stub_ler_arquivo, conteudo_de_
 
     qtd = registrar_livros(arquivos, fake_inserir_registros)
     assert qtd == 12
+
+
+@patch('colecao.livros.ler_arquivo')
+def test_registrar_livros_insere_5_registros(stub_ler_arquivo, resultado_em_duas_paginas):
+    stub_ler_arquivo.side_effect = resultado_em_duas_paginas
+    arquivos = [
+        '/tmp/arq1', '/tmp/arq2'
+    ]
+    fake_db = MagicMock()
+    fake_db.inserir_registros = fake_inserir_registros
+    qtd = registrar_livros(arquivos, fake_db.inserir_registros)
+    assert qtd == 5
+
+
+class FakeDB:
+    def __init__(self):
+        self._registros = []
+
+    def inserir_registros(self, dados):
+        self._registros.extend(dados)
+        return len(dados)
+
+
+@patch('colecao.livros.ler_arquivo')
+def test_registrar_livros_insere_12_registros_na_base_de_dados(stub_ler_arquivo, resultado_em_tres_paginas):
+    arquivos = [
+        '/tmp/arq1', '/tmp/arq2', '/tmp/arq3'
+    ]
+    stub_ler_arquivo.side_effect = resultado_em_tres_paginas
+    fake_db = FakeDB()
+    qtd = registrar_livros(arquivos, fake_db.inserir_registros)
+    assert qtd == 8
+    assert fake_db._registros[0] == {
+        "author": "Luciano Ramalho",
+        "title": "Python Fluente"
+    }
