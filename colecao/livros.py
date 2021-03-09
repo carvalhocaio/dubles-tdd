@@ -169,3 +169,4 @@ def ler_arquivo(nome):
 def registrar_livros(arquivos):
     for arq in arquivos:
         conteudo = ler_arquivo(arq)
+        resposta = Resposta(conteudo)

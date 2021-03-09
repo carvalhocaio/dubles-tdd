@@ -76,7 +76,8 @@ def stub_de_urlopen(url, timeout):
 def test_executar_requisicao_retorna_tipo_string():
     with patch("colecao.livros.urlopen", stub_de_urlopen):
         print(stub_de_urlopen)
-        resultado = executar_requisicao("https://buscarlivros?author=Jk+Rowlings")
+        resultado = executar_requisicao(
+            "https://buscarlivros?author=Jk+Rowlings")
         assert type(resultado) == str
 
 
@@ -154,7 +155,8 @@ def test_executar_requisicao_levanta_excecao_do_tipo_http_error(duble_de_urlopen
 def test_executar_requisicao_loga_mensagem_de_erro_de_http_error(stub_urlopen, caplog):
     fp = mock_open
     fp.close = Mock()
-    stub_urlopen.side_effect = HTTPError(Mock(), Mock(), "mensagem de erro", Mock(), fp)
+    stub_urlopen.side_effect = HTTPError(
+        Mock(), Mock(), "mensagem de erro", Mock(), fp)
     executar_requisicao("http://")
     assert len(caplog.records) == 1
     for registro in caplog.records:
@@ -195,7 +197,8 @@ def test_escrever_em_arquivo_registra_erro_ao_criar_o_arquivo(
 ):
     arq = "/bla/arquivo.json"
     escrever_em_arquivo(arq, "dados de livros")
-    spy_exception.assert_called_once_with("Não foi possível criar arquivo %s" % arq)
+    spy_exception.assert_called_once_with(
+        "Não foi possível criar arquivo %s" % arq)
 
 
 class SpyFp:
@@ -606,4 +609,29 @@ def test_registrar_livros_chama_ler_arquivo_3_vezes():
             call(arquivos[0]),
             call(arquivos[1]),
             call(arquivos[2]),
+        ]
+
+
+@patch('colecao.livros.ler_arquivo')
+def test_registrar_livros_instancia_Resposta_3_vezes(stub_ler_arquivo, conteudo_de_4_arquivos):
+    stub_ler_arquivo.side_effect = conteudo_de_4_arquivos
+    arquivos = [
+        "tmp/arquivos1",
+        "tmp/arquivos2",
+        "tmp/arquivos3",
+        "tmp/arquivos4",
+    ]
+    with patch('colecao.livros.Resposta') as MockResposta:
+        MockResposta.side_effect = [
+            Resposta(conteudo_de_4_arquivos[0]),
+            Resposta(conteudo_de_4_arquivos[1]),
+            Resposta(conteudo_de_4_arquivos[2]),
+            Resposta(conteudo_de_4_arquivos[3]),
+        ]
+        registrar_livros(arquivos)
+        MockResposta.call_args_list == [
+            call(conteudo_de_4_arquivos[0]),
+            call(conteudo_de_4_arquivos[1]),
+            call(conteudo_de_4_arquivos[2]),
+            call(conteudo_de_4_arquivos[3]),
         ]
