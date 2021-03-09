@@ -15,6 +15,7 @@ from colecao.livros import (
     Consulta,
     baixar_livros,
     Resposta,
+    registrar_livros
 )
 from urllib.error import HTTPError
 
@@ -590,4 +591,19 @@ def test_baixar_livros_chama_escrever_em_arquivo_para_pagina_2_e_3(
         assert mock_escrever.call_args_list == [
             call(arquivo[1], resultado_em_tres_paginas_erro_na_pagina_1[1]),
             call(arquivo[2], resultado_em_tres_paginas_erro_na_pagina_1[2]),
+        ]
+
+
+def test_registrar_livros_chama_ler_arquivo_3_vezes():
+    arquivos = [
+        "tmp/arq1",
+        "tmp/arq2",
+        "tmp/arq3",
+    ]
+    with patch('colecao.livros.ler_arquivo') as duble_ler_arquivo:
+        registrar_livros(arquivos)
+        duble_ler_arquivo.call_args_list == [
+            call(arquivos[0]),
+            call(arquivos[1]),
+            call(arquivos[2]),
         ]
