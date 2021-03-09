@@ -371,7 +371,6 @@ def conteudo_de_4_arquivos():
                  "title": "Pense em Python"
                 }
             ]
-
         }
         """,
         """
@@ -597,15 +596,21 @@ def test_baixar_livros_chama_escrever_em_arquivo_para_pagina_2_e_3(
         ]
 
 
-def test_registrar_livros_chama_ler_arquivo_3_vezes():
+
+def fake_inserir_registros(dados):
+    return len(dados)
+
+
+def test_registrar_livros_chama_ler_arquivo_3_vezes(resultado_em_tres_paginas):
     arquivos = [
         "tmp/arq1",
         "tmp/arq2",
         "tmp/arq3",
     ]
-    with patch('colecao.livros.ler_arquivo') as duble_ler_arquivo:
-        registrar_livros(arquivos)
-        duble_ler_arquivo.call_args_list == [
+    with patch('colecao.livros.ler_arquivo') as mock_ler_arquivo:
+        mock_ler_arquivo.side_effect = resultado_em_tres_paginas
+        registrar_livros(arquivos, fake_inserir_registros)
+        mock_ler_arquivo.call_args_list == [
             call(arquivos[0]),
             call(arquivos[1]),
             call(arquivos[2]),
@@ -628,10 +633,24 @@ def test_registrar_livros_instancia_Resposta_3_vezes(stub_ler_arquivo, conteudo_
             Resposta(conteudo_de_4_arquivos[2]),
             Resposta(conteudo_de_4_arquivos[3]),
         ]
-        registrar_livros(arquivos)
+        registrar_livros(arquivos, fake_inserir_registros)
         MockResposta.call_args_list == [
             call(conteudo_de_4_arquivos[0]),
             call(conteudo_de_4_arquivos[1]),
             call(conteudo_de_4_arquivos[2]),
             call(conteudo_de_4_arquivos[3]),
         ]
+
+
+@patch('colecao.livros.ler_arquivo')
+def test_registrar_livros_chama_inserir_registros(stub_ler_arquivo, conteudo_de_4_arquivos):
+    arquivos = {
+        '/tmp/arquivos1',
+        '/tmp/arquivos2',
+        '/tmp/arquivos3',
+    }
+    conteudo_de_3_arquivo = conteudo_de_4_arquivos[1:]
+    stub_ler_arquivo.side_effect = conteudo_de_3_arquivo
+
+    qtd = registrar_livros(arquivos, fake_inserir_registros)
+    assert qtd == 12

@@ -166,7 +166,10 @@ def ler_arquivo(nome):
     return ""
 
 
-def registrar_livros(arquivos):
+def registrar_livros(arquivos, inserir_registros):
+    qtd =0
     for arq in arquivos:
         conteudo = ler_arquivo(arq)
         resposta = Resposta(conteudo)
+        qtd += inserir_registros(resposta.documentos)
+    return qtd
